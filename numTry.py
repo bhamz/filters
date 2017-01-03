@@ -3,34 +3,57 @@ import matplotlib.pyplot as plt
 import pylab
 import matplotlib.animation as animation
 
+def dats():
+    L = dats.L; n = dats.n
+    t = np.linspace(0, L, n);
+    k = [x*2*np.pi/L for x in range(-n/2, n/2)]
+    y1 =  (3*np.sin(2*t) + 0.5*np.tanh(0.5*(t-3))) + np.exp(-(t-4)**2)\
+        + 1.5*np.sin(5*t) + 4*np.cos(3*(t-6)**2)/10+(t/20)**3
+    y1 = y1/max(y1)
+    j = 0
+
+    while j < dats.n-1:
+        j += 1
+        y2 = np.exp(-(t-t[j])**4)
+        y3 = y1 * y2
+        y4 = np.fft.fft(y3)
+        y4 = np.fft.fftshift(np.abs(y4))
+
+        yield y1, y2, y3, y4, t, k
+
+# domain length and descretization
+dats.L = 4 * np.pi; dats.n = 528
+
+
+fig, (ax1, ax2, ax3) = plt.subplots(3,1)
+
+for ax in [ax1, ax2]:
+    ax.set_ylim(-1.1, 1.1)
+    ax.set_xlim(0,4*np.pi)
+
+
+line1, = ax1.plot([],[])
+line2, = ax1.plot([],[])
+line3, = ax2.plot([],[])
+line4, = ax3.plot([],[])
+line = [line1, line2, line3, line4]
 
 
 
-x_hi = 10; x_lo = 0; y_hi = 1; y_lo = -1
-fig = plt.figure() # creates figure to plot
-ax = plt.axes(xlim=(x_lo,x_hi), ylim=(y_lo,y_hi)) # axis of figure
-line1, = ax.plot([],[]) # line is empty, will be added later to the plot
-line2, = ax.plot([],[]) # second line obj for multiple in figure
 
+def anim8(data):
+    y1, y2, y3, y4, t, k = data
 
-def init(): # initializes line obj
-    line1.set_data([],[])
-    line2.set_data([],[])
-    return line1,line2,
+    ax3.set_xlim(-50, 50)
+    ax3.set_ylim( 0, 50)
 
-def animate(i): # creates a line sequentially called for animation
-    x = np.linspace(x_lo, x_hi, 1000)
-    y1 = np.exp(-(x-x[i])**4)
-    y2 = (2*np.sin(2*x) + 0.5*np.tanh(0.5*(x-3))) + 0.2*np.exp(-(x-4)**2)\
-     + 1.5*np.sin(5*x) + 2*np.cos(3*(x-6)**2)/10+(x/20)**3
-    y2 = y2/max(y2)
-    line1.set_data(x,y1)
-    line2.set_data(x,y2)
-    return line1,line2,
+    line[0].set_data(t,y1)
+    line[1].set_data(t,y2)
+    line[2].set_data(t,y3)
+    line[3].set_data(k,y4)
 
-# frames is number of total frames to animate, interval is ms delay btw frames
-# blit = True tells to only redraw changed pieces of plot
-anim = animation.FuncAnimation(fig, animate, init_func = init,
-                                frames = 1000, interval=1, blit = True, repeat = False)
+    return line
 
-pylab.show()
+ani = animation.FuncAnimation(fig, anim8, dats, blit = True, interval = 5, repeat = True)
+
+plt.show()
